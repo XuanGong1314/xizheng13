@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>西政法律人格测试</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;font-family:sans-serif;}
+body{background:#fef2f3;padding:15px;}
+.container{max-width:500px;margin:0 auto;}
+.page{display:none;}
+.page.active{display:block;}
+
+.card{background:#fff;border-radius:20px;padding:25px 20px;margin-bottom:20px;}
+.title{font-size:24px;color:#a9242e;font-weight:bold;text-align:center;margin-bottom:10px;}
+.subtitle{text-align:center;color:#666;margin-bottom:25px;line-height:1.5;}
+
+.btn{width:100%;padding:15px;border-radius:15px;border:none;background:#a9242e;color:white;font-size:16px;font-weight:bold;margin-bottom:10px;}
+.btn-outline{background:white;color:#a9242e;border:1px solid #a9242e;}
+
+.progress{height:6px;background:#eee;border-radius:3px;margin-bottom:15px;}
+.progress-bar{height:100%;background:#a9242e;width:0%;}
+
+.question{font-size:18px;font-weight:bold;margin-bottom:20px;}
+.option{padding:14px;background:#f7f7f7;border-radius:12px;margin-bottom:8px;}
+
+.gender-box{display:flex;gap:10px;margin-bottom:20px;}
+.gender{flex:1;padding:15px;border:1px solid #ddd;border-radius:14px;text-align:center;}
+.gender.on{border-color:#a9242e;background:#fef2f3;color:#a9242e;font-weight:bold;}
+
+.avatar{width:180px;height:240px;background:#f5f5f5;border-radius:16px;margin:0 auto 20px;}
+.code{font-size:26px;color:#a9242e;font-weight:bold;text-align:center;}
+.name{font-size:20px;font-weight:bold;text-align:center;margin:10px 0;}
+.desc{text-align:center;color:#444;line-height:1.6;margin-bottom:20px;}
+
+.dim{margin-bottom:12px;}
+.dim-line{display:flex;justify-content:space-between;font-size:14px;color:#666;margin-bottom:5px;}
+.dim-bar{height:6px;background:#eee;border-radius:3px;}
+.dim-fill{height:100%;background:#a9242e;}
+
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:20px;}
+.grid-item{background:#f7f7f7;border-radius:12px;padding:12px;text-align:center;}
+.grid-code{font-weight:bold;color:#a9242e;}
+</style>
+</head>
+
+<body>
+<div class="container">
+
+<!-- 首页 -->
+<div class="page active" id="page1">
+  <div class="card">
+    <div class="title">西政法律人格测试</div>
+    <div class="subtitle">石瓦坡在召唤，解锁你的西政法律人格</div>
+    <button class="btn" onclick="show(2)">开始测试</button>
+    <button class="btn btn-outline" onclick="showGrid()">人格图鉴</button>
+  </div>
+</div>
+
+<!-- 性别 -->
+<div class="page" id="page2">
+  <div class="card">
+    <div class="title">选择你的形象</div>
+    <div class="gender-box">
+      <div class="gender" id="g1" onclick="setGender(1)">男生</div>
+      <div class="gender" id="g2" onclick="setGender(2)">女生</div>
+    </div>
+    <button class="btn" id="goTest" disabled onclick="startTest()">进入答题</button>
+  </div>
+</div>
+
+<!-- 答题 -->
+<div class="page" id="page3">
+  <div class="card">
+    <div class="progress"><div class="progress-bar" id="bar"></div></div>
+    <div class="question" id="q"></div>
+    <div id="opts"></div>
+  </div>
+</div>
+
+<!-- 结果 -->
+<div class="page" id="page4">
+  <div class="card">
+    <div class="avatar" id="pic"></div>
+    <div class="code" id="code"></div>
+    <div class="name" id="name"></div>
+    <div class="desc" id="desc"></div>
+    <div class="dim">
+      <div class="dim-line"><span>社牛 B</span><span>宅家 Z</span></div>
+      <div class="dim-bar"><div class="dim-fill" id="d1"></div></div>
+    </div>
+    <div class="dim">
+      <div class="dim-line"><span>法条 T</span><span>玄学 X</span></div>
+      <div class="dim-bar"><div class="dim-fill" id="d2"></div></div>
+    </div>
+    <div class="dim">
+      <div class="dim-line"><span>铁判 P</span><span>心软 R</span></div>
+      <div class="dim-bar"><div class="dim-fill" id="d3"></div></div>
+    </div>
+    <div class="dim">
+      <div class="dim-line"><span>卷王 J</span><span>躺平 T</span></div>
+      <div class="dim-bar"><div class="dim-fill" id="d4"></div></div>
+    </div>
+    <button class="btn" onclick="show(1)">重新测试</button>
+    <button class="btn btn-outline" onclick="showGrid()">人格图鉴</button>
+  </div>
+</div>
+
+<!-- 图鉴 -->
+<div class="page" id="page5">
+  <div class="card">
+    <div class="title">16型人格图鉴</div>
+    <div class="grid" id="grid"></div>
+    <button class="btn btn-outline" onclick="show(1)">返回</button>
+  </div>
+</div>
+
+</div>
+
+<script>
+// ================= 你自己替换图片 =================
+const imgs = {
+BTPJ:{m:"男-BTPJ.png",f:"女-BTPJ.png"},
+BTPT:{m:"男-BTPT.png",f:"女-BTPT.png"},
+BTRJ:{m:"男-BTRJ.png",f:"女-BTRJ.png"},
+BTRT:{m:"男-BTRT.png",f:"女-BTRT.png"},
+BXPJ:{m:"男-BXPJ.png",f:"女-BXPJ.png"},
+BXPT:{m:"男-BXPT.png",f:"女-BXPT.png"},
+BXRJ:{m:"男-BXRJ.png",f:"女-BXRJ.png"},
+BXRT:{m:"男-BXRT.png",f:"女-BXRT.png"},
+ZTPJ:{m:"男-ZTPJ.png",f:"女-ZTPJ.png"},
+ZTPT:{m:"男-ZTPT.png",f:"女-ZTPT.png"},
+ZTRJ:{m:"男-ZTRJ.png",f:"女-ZTRJ.png"},
+ZTRT:{m:"男-ZTRT.png",f:"女-ZTRT.png"},
+ZXPJ:{m:"男-ZXPJ.png",f:"女-ZXPJ.png"},
+ZXPT:{m:"男-ZXPT.png",f:"女-ZXPT.png"},
+ZXRJ:{m:"男-ZXRJ.png",f:"女-ZXRJ.png"},
+ZXRT:{m:"男-ZXRT.png",f:"女-ZXRT.png"}
+};
+
+const types = {
+BTPJ:{n:"四教钉子户",d:"每天雷打不动蹲守四教，法条背到肌肉记忆，模拟法庭直接把对面辩到沉默。"},
+BTPT:{n:"突击战神",d:"平时佛系玩耍，期末一周封神，三天学完一学期，分数还碾压全场。"},
+BTRJ:{n:"正义热血仔",d:"见不得不公，路见不平必开口，立志用法律守护弱小。"},
+BTRT:{n:"辩论场疯子",d:"口才拉满逻辑爆炸，辩场无人能挡，主打一个寸步不让。"},
+BXPJ:{n:"模拟法庭庭长",d:"天生带队核心，控场极强，思路清晰到吓人。"},
+BXPT:{n:"期末特种兵",d:"平时隐身，考前爆发，每天睡3小时照样高分飘过。"},
+BXRJ:{n:"普法小天使",d:"爱讲法、会讲法，把复杂条文讲成大白话。"},
+BXRT:{n:"干饭第一名",d:"学习可以佛系，干饭必须冲锋，食堂速度无人能敌。"},
+ZTPJ:{n:"行走法条机",d:"张口就是条文，老师提问永远标准答案，人形法典。"},
+ZTPT:{n:"佛系法师",d:"不卷不抢，及格万岁，开心最重要，法学院清流。"},
+ZTRJ:{n:"暖心调解员",d:"性格温柔会倾听，同学矛盾全靠你摆平。"},
+ZTRT:{n:"毓秀湖沉思者",d:"爱湖边发呆思考人生，内心丰富，安静又有深度。"},
+ZXPJ:{n:"法学理论家",d:"沉迷理论流派，论文写得深刻，导师心头好。"},
+ZXPT:{n:"学术杠精",d:"凡事必抬杠，角度刁钻，老师都怕你提问。"},
+ZXRJ:{n:"法律诗人",d:"感性细腻文笔温柔，论文像散文，充满人文关怀。"},
+ZXRT:{n:"图书馆幽灵",d:"神出鬼没，只在图书馆出现，安静到没人发现。"}
+};
+
+const qs = [
+{d:{J:5,Tang:1},q:"四教占座我必精准卡点，绝不浪费一秒"},
+{d:{B:5,Z:1},q:"有人在毓秀湖聊案例，我会主动凑过去"},
+{d:{P:5,R:1},q:"法无明文不为罪，再可恨也不能乱判"},
+{d:{T:5,X:1},q:"遇到问题先翻法条，不信玄学解释"},
+{d:{Z:5,B:1},q:"我更喜欢一个人安静看书，不想社交"},
+{d:{J:5,Tang:1},q:"期末我提前一个月复习，绝不临时抱佛脚"},
+{d:{R:5,P:1},q:"法律要讲人情，不能只看冰冷条文"},
+{d:{X:5,T:1},q:"我爱看法学理论流派，越抽象越上头"},
+{d:{B:5,Z:1},q:"班级活动我必带头，气氛担当就是我"},
+{d:{Tang:5,J:1},q:"ddl前一天才动笔，效率反而更高"},
+{d:{R:5,P:1},q:"法不能向不法让步，该正当防卫就支持"},
+{d:{T:5,X:1},q:"司法解释编号我背得比手机号还熟"},
+{d:{Z:5,B:1},q:"图书馆角落才是归宿，人多就难受"},
+{d:{P:5,R:1},q:"程序正义大于一切，不能为结果乱来"},
+{d:{J:5,Tang:1},q:"模拟法庭我提前一周准备所有材料"},
+{d:{X:5,T:1},q:"我喜欢从哲学角度抬杠，挑战权威观点"},
+{d:{B:5,Z:1},q:"我经常组织同学讨论案例，分享观点"},
+{d:{R:5,P:1},q:"看到冤案我真的会气得睡不着"},
+{d:{J:5,Tang:1},q:"书包永远装满法条，走到哪学到哪"},
+{d:{X:5,T:1},q:"很多法条太僵硬，就该大胆修改"}
+];
+
+let gender = 0;
+let idx = 0;
+let s = {B:0,Z:0,T:0,X:0,P:0,R:0,J:0,Tang:0};
+const total = qs.length;
+
+// 切换页面
+function show(i){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.getElementById('page'+i).classList.add('active');
+}
+
+// 选择性别
+function setGender(g){
+  gender=g;
+  document.querySelectorAll('.gender').forEach(e=>e.classList.remove('on'));
+  document.getElementById('g'+g).classList.add('on');
+  document.getElementById('goTest').disabled=false;
+}
+
+// 开始测试
+function startTest(){
+  idx=0;
+  s={B:0,Z:0,T:0,X:0,P:0,R:0,J:0,Tang:0};
+  show(3);
+  load();
+}
+
+// 加载题目
+function load(){
+  if(idx>=total){result();return;}
+  const q=qs[idx];
+  document.getElementById('q').innerText=(idx+1)+". "+q.q;
+  const box=document.getElementById('opts');
+  box.innerHTML='';
+  const arr=[
+    {v:1,t:'完全不同意'},
+    {v:2,t:'不太同意'},
+    {v:3,t:'一般'},
+    {v:4,t:'比较同意'},
+    {v:5,t:'完全同意'}
+  ];
+  arr.forEach(o=>{
+    let div=document.createElement('div');
+    div.className='option';
+    div.innerText=o.t;
+    div.onclick=()=>{
+      for(let k in q.d){
+        s[k] += q.d[k]==5 ? o.v : 6-o.v;
+      }
+      idx++;
+      load();
+    };
+    box.appendChild(div);
+  });
+  document.getElementById('bar').style.width=(idx/total*100)+'%';
+}
+
+// 结果
+function result(){
+  const b=Math.round(s.B/(s.B+s.Z)*100);
+  const t=Math.round(s.T/(s.T+s.X)*100);
+  const p=Math.round(s.P/(s.P+s.R)*100);
+  const j=Math.round(s.J/(s.J+s.Tang)*100);
+  let code='';
+  code+=b>=50?'B':'Z';
+  code+=t>=50?'T':'X';
+  code+=p>=50?'P':'R';
+  code+=j>=50?'J':'T';
+  const ty=types[code];
+  const img=gender==1?imgs[code].m:imgs[code].f;
+  document.getElementById('code').innerText=code;
+  document.getElementById('name').innerText=ty.n;
+  document.getElementById('desc').innerText=ty.d;
+  document.getElementById('pic').innerHTML=`< img src="${img}" style="width:100%;height:100%;object-fit:cover">`;
+  document.getElementById('d1').style.width=b+'%';
+  document.getElementById('d2').style.width=t+'%';
+  document.getElementById('d3').style.width=p+'%';
+  document.getElementById('d4').style.width=j+'%';
+  show(4);
+}
+
+// 图鉴
+function showGrid(){
+  const g=document.getElementById('grid');
+  g.innerHTML='';
+  for(let c in types){
+    let d=document.createElement('div');
+    d.className='grid-item';
+    d.innerHTML=`<div class="grid-code">${c}</div><div>${types[c].n}</div>`;
+    d.onclick=()=>{
+      gender=gender||1;
+      const img=gender==1?imgs[c].m:imgs[c].f;
+      document.getElementById('code').innerText=c;
+      document.getElementById('name').innerText=types[c].n;
+      document.getElementById('desc').innerText=types[c].d;
+      document.getElementById('pic').innerHTML=`< img src="${img}" style="width:100%;height:100%;object-fit:cover">`;
+      show(4);
+    };
+    g.appendChild(d);
+  }
+  show(5);
+}
+</script>
+</body>
+</html>
