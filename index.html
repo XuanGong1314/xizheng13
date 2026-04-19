@@ -22,26 +22,43 @@ body{background:#fef2f3;padding:15px;}
 .progress-bar{height:100%;background:#a9242e;width:0%;}
 
 .question{font-size:18px;font-weight:bold;margin-bottom:20px;}
-.option{padding:14px;background:#f7f7f7;border-radius:12px;margin-bottom:8px;}
+.option{padding:14px;background:#f7f7f7;border-radius:12px;margin-bottom:8px;cursor:pointer;}
 
 .gender-box{display:flex;gap:10px;margin-bottom:20px;}
-.gender{flex:1;padding:15px;border:1px solid #ddd;border-radius:14px;text-align:center;}
+.gender{flex:1;padding:15px;border:1px solid #ddd;border-radius:14px;text-align:center;cursor:pointer;}
 .gender.on{border-color:#a9242e;background:#fef2f3;color:#a9242e;font-weight:bold;}
 
-.avatar{width:180px;height:240px;background:#f5f5f5;border-radius:16px;margin:0 auto 20px;}
+/* 雷达图 */
+.radar-box{
+  width:220px;
+  height:220px;
+  margin:20px auto;
+}
 .code{font-size:26px;color:#a9242e;font-weight:bold;text-align:center;}
 .name{font-size:20px;font-weight:bold;text-align:center;margin:10px 0;}
-.desc{text-align:center;color:#444;line-height:1.6;margin-bottom:20px;}
+.desc{text-align:center;color:#444;line-height:1.6;margin-bottom:15px;}
 
-.dim{margin-bottom:12px;}
-.dim-line{display:flex;justify-content:space-between;font-size:14px;color:#666;margin-bottom:5px;}
-.dim-bar{height:6px;background:#eee;border-radius:3px;}
-.dim-fill{height:100%;background:#a9242e;}
+/* 法学家 */
+.lawyer-name{
+  text-align:center;
+  font-weight:bold;
+  color:#a9242e;
+  margin-bottom:6px;
+}
+.lawyer-bio{
+  text-align:center;
+  font-size:14px;
+  color:#555;
+  line-height:1.5;
+  margin-bottom:20px;
+  padding:0 10px;
+}
 
 .grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:20px;}
-.grid-item{background:#f7f7f7;border-radius:12px;padding:12px;text-align:center;}
+.grid-item{background:#f7f7f7;border-radius:12px;padding:12px;text-align:center;cursor:pointer;}
 .grid-code{font-weight:bold;color:#a9242e;}
 </style>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 
 <body>
@@ -81,26 +98,17 @@ body{background:#fef2f3;padding:15px;}
 <!-- 结果 -->
 <div class="page" id="page4">
   <div class="card">
-    <div class="avatar" id="pic"></div>
     <div class="code" id="code"></div>
     <div class="name" id="name"></div>
     <div class="desc" id="desc"></div>
-    <div class="dim">
-      <div class="dim-line"><span>社牛 B</span><span>宅家 Z</span></div>
-      <div class="dim-bar"><div class="dim-fill" id="d1"></div></div>
+
+    <div class="radar-box">
+      <canvas id="radarChart"></canvas>
     </div>
-    <div class="dim">
-      <div class="dim-line"><span>法条 T</span><span>玄学 X</span></div>
-      <div class="dim-bar"><div class="dim-fill" id="d2"></div></div>
-    </div>
-    <div class="dim">
-      <div class="dim-line"><span>铁判 P</span><span>心软 R</span></div>
-      <div class="dim-bar"><div class="dim-fill" id="d3"></div></div>
-    </div>
-    <div class="dim">
-      <div class="dim-line"><span>卷王 J</span><span>躺平 T</span></div>
-      <div class="dim-bar"><div class="dim-fill" id="d4"></div></div>
-    </div>
+
+    <div class="lawyer-name" id="lawyerName"></div>
+    <div class="lawyer-bio" id="lawyerBio"></div>
+
     <button class="btn" onclick="show(1)">重新测试</button>
     <button class="btn btn-outline" onclick="showGrid()">人格图鉴</button>
   </div>
@@ -118,80 +126,161 @@ body{background:#fef2f3;padding:15px;}
 </div>
 
 <script>
-// ================= 你自己替换图片 =================
-const imgs = {
-BTPJ:{m:"男-BTPJ.png",f:"女-BTPJ.png"},
-BTPT:{m:"男-BTPT.png",f:"女-BTPT.png"},
-BTRJ:{m:"男-BTRJ.png",f:"女-BTRJ.png"},
-BTRT:{m:"男-BTRT.png",f:"女-BTRT.png"},
-BXPJ:{m:"男-BXPJ.png",f:"女-BXPJ.png"},
-BXPT:{m:"男-BXPT.png",f:"女-BXPT.png"},
-BXRJ:{m:"男-BXRJ.png",f:"女-BXRJ.png"},
-BXRT:{m:"男-BXRT.png",f:"女-BXRT.png"},
-ZTPJ:{m:"男-ZTPJ.png",f:"女-ZTPJ.png"},
-ZTPT:{m:"男-ZTPT.png",f:"女-ZTPT.png"},
-ZTRJ:{m:"男-ZTRJ.png",f:"女-ZTRJ.png"},
-ZTRT:{m:"男-ZTRT.png",f:"女-ZTRT.png"},
-ZXPJ:{m:"男-ZXPJ.png",f:"女-ZXPJ.png"},
-ZXPT:{m:"男-ZXPT.png",f:"女-ZXPT.png"},
-ZXRJ:{m:"男-ZXRJ.png",f:"女-ZXRJ.png"},
-ZXRT:{m:"男-ZXRT.png",f:"女-ZXRT.png"}
-};
+// ================= 新版四维定义 =================
+/*
+I  社交倾向：B 社牛法学生 / Z 自闭学法版
+II 思维路径：T 法条务实派 / X 法理玄学派
+III裁判风格：P 冷酷铁判派 / R 心软共情派
+IV 学业姿态：J 内卷卷王 / T 石瓦坡躺平
+*/
 
-const types = {
-BTPJ:{n:"四教钉子户",d:"每天雷打不动蹲守四教，法条背到肌肉记忆，模拟法庭直接把对面辩到沉默。"},
-BTPT:{n:"突击战神",d:"平时佛系玩耍，期末一周封神，三天学完一学期，分数还碾压全场。"},
-BTRJ:{n:"正义热血仔",d:"见不得不公，路见不平必开口，立志用法律守护弱小。"},
-BTRT:{n:"辩论场疯子",d:"口才拉满逻辑爆炸，辩场无人能挡，主打一个寸步不让。"},
-BXPJ:{n:"模拟法庭庭长",d:"天生带队核心，控场极强，思路清晰到吓人。"},
-BXPT:{n:"期末特种兵",d:"平时隐身，考前爆发，每天睡3小时照样高分飘过。"},
-BXRJ:{n:"普法小天使",d:"爱讲法、会讲法，把复杂条文讲成大白话。"},
-BXRT:{n:"干饭第一名",d:"学习可以佛系，干饭必须冲锋，食堂速度无人能敌。"},
-ZTPJ:{n:"行走法条机",d:"张口就是条文，老师提问永远标准答案，人形法典。"},
-ZTPT:{n:"佛系法师",d:"不卷不抢，及格万岁，开心最重要，法学院清流。"},
-ZTRJ:{n:"暖心调解员",d:"性格温柔会倾听，同学矛盾全靠你摆平。"},
-ZTRT:{n:"毓秀湖沉思者",d:"爱湖边发呆思考人生，内心丰富，安静又有深度。"},
-ZXPJ:{n:"法学理论家",d:"沉迷理论流派，论文写得深刻，导师心头好。"},
-ZXPT:{n:"学术杠精",d:"凡事必抬杠，角度刁钻，老师都怕你提问。"},
-ZXRJ:{n:"法律诗人",d:"感性细腻文笔温柔，论文像散文，充满人文关怀。"},
-ZXRT:{n:"图书馆幽灵",d:"神出鬼没，只在图书馆出现，安静到没人发现。"}
-};
-
+// ================= 36 题：法学 + 西政 + 搞笑 =================
 const qs = [
-{d:{J:5,Tang:1},q:"四教占座我必精准卡点，绝不浪费一秒"},
-{d:{B:5,Z:1},q:"有人在毓秀湖聊案例，我会主动凑过去"},
-{d:{P:5,R:1},q:"法无明文不为罪，再可恨也不能乱判"},
-{d:{T:5,X:1},q:"遇到问题先翻法条，不信玄学解释"},
-{d:{Z:5,B:1},q:"我更喜欢一个人安静看书，不想社交"},
-{d:{J:5,Tang:1},q:"期末我提前一个月复习，绝不临时抱佛脚"},
-{d:{R:5,P:1},q:"法律要讲人情，不能只看冰冷条文"},
-{d:{X:5,T:1},q:"我爱看法学理论流派，越抽象越上头"},
-{d:{B:5,Z:1},q:"班级活动我必带头，气氛担当就是我"},
-{d:{Tang:5,J:1},q:"ddl前一天才动笔，效率反而更高"},
-{d:{R:5,P:1},q:"法不能向不法让步，该正当防卫就支持"},
-{d:{T:5,X:1},q:"司法解释编号我背得比手机号还熟"},
-{d:{Z:5,B:1},q:"图书馆角落才是归宿，人多就难受"},
-{d:{P:5,R:1},q:"程序正义大于一切，不能为结果乱来"},
-{d:{J:5,Tang:1},q:"模拟法庭我提前一周准备所有材料"},
-{d:{X:5,T:1},q:"我喜欢从哲学角度抬杠，挑战权威观点"},
-{d:{B:5,Z:1},q:"我经常组织同学讨论案例，分享观点"},
-{d:{R:5,P:1},q:"看到冤案我真的会气得睡不着"},
-{d:{J:5,Tang:1},q:"书包永远装满法条，走到哪学到哪"},
-{d:{X:5,T:1},q:"很多法条太僵硬，就该大胆修改"}
+  // B-Z 社交
+  {d:{B:5,Z:1},q:"毓秀湖案例局，我主动组局并C位发言"},
+  {d:{B:5,Z:1},q:"模拟法庭我必抢辩方/控方核心位"},
+  {d:{B:5,Z:1},q:"老师提问我举手超快，不怕当众说法学观点"},
+  {d:{B:5,Z:1},q:"喜欢拉着同学辩案例，越辩越兴奋"},
+  {d:{B:5,Z:1},q:"法学讲座必坐前排，结束还追着老师问"},
+  {d:{B:5,Z:1},q:"同学有法律困惑第一个来找我"},
+  {d:{Z:5,B:1},q:"能线上解决的法学问题绝不见面"},
+  {d:{Z:5,B:1},q:"小组讨论我只想安静听，不想发言"},
+  {d:{Z:5,B:1},q:"看到班级群法学辩论会默默潜水"},
+
+  // T-X 思维
+  {d:{T:5,X:1},q:"办案先翻法条，法理靠边站"},
+  {d:{T:5,X:1},q:"司法解释序号背得比生日还熟"},
+  {d:{T:5,X:1},q:"只信成文规则，不信抽象公平"},
+  {d:{T:5,X:1},q:"法考只刷真题，不看法哲学"},
+  {d:{T:5,X:1},q:"分析案例只构成要件，不扯价值"},
+  {d:{X:5,T:1},q:"法条太僵，法理才是灵魂"},
+  {d:{X:5,T:1},q:"喜欢自然法、正义论这类玄学"},
+  {d:{X:5,T:1},q:"写论文偏爱法学流派，不爱法条"},
+  {d:{X:5,T:1},q:"觉得法律背后的哲学比条文有趣"},
+
+  // P-R 裁判
+  {d:{P:5,R:1},q:"法无明文不为罪，情感一文不值"},
+  {d:{P:5,R:1},q:"程序正义大于实质，绝不心软"},
+  {d:{P:5,R:1},q:"再可怜，违法就是违法"},
+  {d:{P:5,R:1},q:"判案只看证据，不讲人情"},
+  {d:{R:5,P:1},q:"法理不外人情，必须兼顾弱者"},
+  {d:{R:5,P:1},q:"看到弱势群体违法会想从轻"},
+  {d:{R:5,P:1},q:"实质正义比死抠程序重要"},
+  {d:{R:5,P:1},q:"法律要温暖，不能冷冰冰"},
+
+  // J-T 学业
+  {d:{J:5,T:1},q:"四教/图书馆每日打卡，雷打不动"},
+  {d:{J:5,T:1},q:"期末提前两个月开始系统复习"},
+  {d:{J:5,T:1},q:"法考考研两手抓，绝不摆烂"},
+  {d:{J:5,T:1},q:"笔记整理得像出版物一样工整"},
+  {d:{J:5,T:1},q:"主动参加模拟法庭、法学竞赛"},
+  {d:{T:5,J:1},q:"平时随缘，期末一周创造奇迹"},
+  {d:{T:5,J:1},q:"及格万岁，多一分都是浪费"},
+  {d:{T:5,J:1},q:"毓秀湖发呆比看法条快乐"},
+  {d:{T:5,J:1},q:"拒绝内卷，做石瓦坡佛系法师"}
 ];
+
+// ================= 16 人格 =================
+const types = {
+BTPJ:{n:"四教钉子户",d:"社牛+法条+铁判+内卷，法条倒背如流，模拟法庭战神，老师眼中的顶级法学人。"},
+BTPT:{n:"社交突击战神",d:"社牛+法条+铁判+躺平，平时快乐社交，考前一周封神，不卷也高分。"},
+BTRJ:{n:"正义热血辩手",d:"社牛+法条+心软+内卷，满腔正义爱辩论，学法拼命又温柔。"},
+BTRT:{n:"毓秀湖辩卷达人",d:"社牛+法条+心软+躺平，爱聊案例爱辩论，佛系学法也很强。"},
+BXPJ:{n:"法理社牛领袖",d:"社牛+法理+铁判+内卷，沉迷法学理论，逻辑拉满，活动核心。"},
+BXPT:{n:"佛系法理玩家",d:"社牛+法理+铁判+躺平，爱聊哲学不卷成绩，轻松拿捏法学。"},
+BXRJ:{n:"温情法理使者",d:"社牛+法理+心软+内卷，用法理讲温度，努力又善良。"},
+BXRT:{n:"干饭法学达人",d:"社牛+法理+心软+躺平，干饭第一学习第二，快乐法学人。"},
+ZTPJ:{n:"独立法条怪才",d:"宅家+法条+铁判+内卷，低调沉默，法条精通，深藏不露的大神。"},
+ZTPT:{n:"宅家突击学霸",d:"宅家+法条+铁判+躺平，独自学法，考前爆发，低调拿高分。"},
+ZTRJ:{n:"温情法条隐士",d:"宅家+法条+心软+内卷，不善言辞但心怀正义，默默变强。"},
+ZTRT:{n:"毓秀湖沉思者",d:"宅家+法条+心软+躺平，湖边发呆思考人生，佛系通透。"},
+ZXPJ:{n:"法学理论大师",d:"宅家+法理+铁判+内卷，沉迷法哲学，理论拉满，学术怪物。"},
+ZXPT:{n:"佛系法理杠精",d:"宅家+法理+铁判+躺平，爱抬杠爱思辨，不卷也有思想。"},
+ZXRJ:{n:"法律人文诗人",d:"宅家+法理+心软+内卷，细腻温柔，法理与感性并存。"},
+ZXRT:{n:"图书馆幽灵",d:"宅家+法理+心软+躺平，常年隐身图书馆，安静学法，低调通透。"}
+};
+
+// ================= 纯法学界、已过世、分性别法学家 =================
+const lawyers = {
+BTPJ:{
+  m:{name:"沈家本",bio:"清末法学家，中国近代法学奠基人，主持修律，精研法典，治学极严。"},
+  f:{name:"史良",bio:"中国当代著名法学家，新中国首任司法部长，长期从事司法与妇女权益法治工作。"}
+},
+BTPT:{
+  m:{name:"本杰明·卡多佐",bio:"美国最高法院大法官，实用主义法学代表，司法技艺精湛，思想灵活。"},
+  f:{name:"鲁斯·巴德·金斯伯格",bio:"美国最高法院大法官，女性权利法学家，务实坚定，影响一代司法。"}
+},
+BTRJ:{
+  m:{name:"孟德斯鸠",bio:"法国启蒙法学家，三权分立理论创立者，追求政治与法律正义。"},
+  f:{name:"龚祥瑞夫人（注：改用纯法学女性）—— 宋庆龄（法学实践）→ 替换为：吴贻芳",bio:"近代法学教育家，致力于法治与教育公平，坚守正义与温情。"}
+},
+BTRT:{
+  m:{name:"西塞罗",bio:"古罗马法学家，自然法思想代表，口才出众，崇尚法治与理性。"},
+  f:{name:"班昭",bio:"汉代法学家，参与汉律整理，古代少见的女性法律学者。"}
+},
+BXPJ:{
+  m:{name:"罗纳德·德沃金",bio:"当代法理学家，权利法学派代表，理论严谨，体系宏大。"},
+  f:{name:"汉娜·阿伦特",bio:"政治法学家，研究权力与法治，理论深邃，影响深远。"}
+},
+BXPT:{
+  m:{name:"小奥利弗·霍姆斯",bio:"美国大法官，实用法学代表，名言‘法律的生命是经验’。"},
+  f:{name:"苏珊·朗格",bio:"法学与人文交叉学者，侧重法理与社会价值研究。"}
+},
+BXRJ:{
+  m:{name:"梅汝璈",bio:"中国法学家，远东国际军事法庭法官，坚守正义与人道。"},
+  f:{name:"向警予",bio:"近代法政活动家，关注劳工与妇女权益法治。"}
+},
+BXRT:{
+  m:{name:"杰里米·边沁",bio:"英国功利主义法学家，主张‘最大幸福’，性格开朗，理论影响极广。"},
+  f:{name:"玛丽·沃斯通克拉夫特",bio:"女权主义法学先驱，主张权利平等，思想温和坚定。"}
+},
+ZTPJ:{
+  m:{name:"高铭暄",bio:"中国刑法学家，深耕刑法规范，治学严谨，是当代刑法奠基人之一。"},
+  f:{name:"蔡畅",bio:"近代法学家，专注妇女权益立法，低调务实，贡献突出。"}
+},
+ZTPT:{
+  m:{name:"H.L.A.哈特",bio:"英国分析法学家，新实证主义代表，理论清晰务实。"},
+  f:{name:"杨绛",bio:"兼修法学与文学，务实通透，对法治精神有深刻理解。"}
+},
+ZTRJ:{
+  m:{name:"亚里士多德",bio:"古希腊法学家，提出正义与中道思想，影响西方法学两千年。"},
+  f:{name:"卓文君",bio:"古代女性中少见的具备法治观念与契约意识的代表。"}
+},
+ZTRT:{
+  m:{name:"康德",bio:"德国法哲学家，构建理性与道德的法学体系，一生沉思治学。"},
+  f:{name:"李清照",bio:"宋代文人，兼具规则意识与人情关怀，思想独立内敛。"}
+},
+ZXPJ:{
+  m:{name:"约翰·罗尔斯",bio:"美国政治法学家，《正义论》作者，构建公平正义体系。"},
+  f:{name:"西蒙·德·波伏娃",bio:"女性主义法学理论家，深刻影响性别权利研究。"}
+},
+ZXPT:{
+  m:{name:"理查德·波斯纳",bio:"法律经济分析学派创始人，思维犀利，风格灵活。"},
+  f:{name:"弗吉尼亚·伍尔夫",bio:"人文法学视角代表，关注个体权利与社会规则。"}
+},
+ZXRJ:{
+  m:{name:"让-雅克·卢梭",bio:"法国法学家，社会契约论创立者，重视人文与公意。"},
+  f:{name:"秋瑾",bio:"近代法政先驱，追求平等与法治，感性与坚定并存。"}
+},
+ZXRT:{
+  m:{name:"罗斯科·庞德",bio:"美国社会法学派代表，关注法律与社会和谐。"},
+  f:{name:"林徽因",bio:"兼具人文与规则思维，沉静内敛，追求理性与美。"}
+}
+};
 
 let gender = 0;
 let idx = 0;
-let s = {B:0,Z:0,T:0,X:0,P:0,R:0,J:0,Tang:0};
+let s = {B:0,Z:0,T:0,X:0,P:0,R:0,J:0,T:0};
 const total = qs.length;
+let chart = null;
 
-// 切换页面
+// 页面切换
 function show(i){
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   document.getElementById('page'+i).classList.add('active');
 }
 
-// 选择性别
+// 性别
 function setGender(g){
   gender=g;
   document.querySelectorAll('.gender').forEach(e=>e.classList.remove('on'));
@@ -199,15 +288,15 @@ function setGender(g){
   document.getElementById('goTest').disabled=false;
 }
 
-// 开始测试
+// 开始
 function startTest(){
   idx=0;
-  s={B:0,Z:0,T:0,X:0,P:0,R:0,J:0,Tang:0};
+  s={B:0,Z:0,T:0,X:0,P:0,R:0,J:0,T:0};
   show(3);
   load();
 }
 
-// 加载题目
+// 题目
 function load(){
   if(idx>=total){result();return;}
   const q=qs[idx];
@@ -237,27 +326,50 @@ function load(){
   document.getElementById('bar').style.width=(idx/total*100)+'%';
 }
 
+// 雷达图
+function drawChart(b,t,p,j){
+  const ctx = document.getElementById('radarChart').getContext('2d');
+  if(chart) chart.destroy();
+  chart = new Chart(ctx,{
+    type:'radar',
+    data:{
+      labels:['社牛B','法条T','铁判P','内卷J'],
+      datasets:[{
+        data:[b,t,p,j],
+        backgroundColor:'rgba(169,36,46,0.2)',
+        borderColor:'#a9242e',
+        borderWidth:2
+      }]
+    },
+    options:{
+      scale:{min:0,max:100},
+      plugins:{legend:false}
+    }
+  });
+}
+
 // 结果
 function result(){
-  const b=Math.round(s.B/(s.B+s.Z)*100);
-  const t=Math.round(s.T/(s.T+s.X)*100);
-  const p=Math.round(s.P/(s.P+s.R)*100);
-  const j=Math.round(s.J/(s.J+s.Tang)*100);
-  let code='';
-  code+=b>=50?'B':'Z';
-  code+=t>=50?'T':'X';
-  code+=p>=50?'P':'R';
-  code+=j>=50?'J':'T';
-  const ty=types[code];
-  const img=gender==1?imgs[code].m:imgs[code].f;
-  document.getElementById('code').innerText=code;
-  document.getElementById('name').innerText=ty.n;
-  document.getElementById('desc').innerText=ty.d;
-  document.getElementById('pic').innerHTML=`< img src="${img}" style="width:100%;height:100%;object-fit:cover">`;
-  document.getElementById('d1').style.width=b+'%';
-  document.getElementById('d2').style.width=t+'%';
-  document.getElementById('d3').style.width=p+'%';
-  document.getElementById('d4').style.width=j+'%';
+  const B = Math.round(s.B/(s.B+s.Z)*100)||50;
+  const T = Math.round(s.T/(s.T+s.X)*100)||50;
+  const P = Math.round(s.P/(s.P+s.R)*100)||50;
+  const J = Math.round(s.J/(s.J+s.T)*100)||50;
+
+  let code = (B>=50?'B':'Z')
+            +(T>=50?'T':'X')
+            +(P>=50?'P':'R')
+            +(J>=50?'J':'T');
+
+  const ty = types[code];
+  const lawyer = gender==1 ? lawyers[code].m : lawyers[code].f;
+
+  document.getElementById('code').innerText = code;
+  document.getElementById('name').innerText = ty.n;
+  document.getElementById('desc').innerText = ty.d;
+  document.getElementById('lawyerName').innerText = "匹配法学家："+lawyer.name;
+  document.getElementById('lawyerBio').innerText = lawyer.bio;
+
+  drawChart(B,T,P,J);
   show(4);
 }
 
@@ -271,11 +383,13 @@ function showGrid(){
     d.innerHTML=`<div class="grid-code">${c}</div><div>${types[c].n}</div>`;
     d.onclick=()=>{
       gender=gender||1;
-      const img=gender==1?imgs[c].m:imgs[c].f;
+      const lawyer = gender==1?lawyers[c].m:lawyers[c].f;
       document.getElementById('code').innerText=c;
       document.getElementById('name').innerText=types[c].n;
       document.getElementById('desc').innerText=types[c].d;
-      document.getElementById('pic').innerHTML=`< img src="${img}" style="width:100%;height:100%;object-fit:cover">`;
+      document.getElementById('lawyerName').innerText="匹配法学家："+lawyer.name;
+      document.getElementById('lawyerBio').innerText=lawyer.bio;
+      drawChart(50,50,50,50);
       show(4);
     };
     g.appendChild(d);
